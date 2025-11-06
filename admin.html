@@ -3,89 +3,64 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WealthBride — Admin (Demo)</title>
+  <title>WealthBridge Investment Admin</title>
   <link rel="stylesheet" href="admin.css" />
 </head>
 <body>
-  <div class="wrap">
+  <div class="container">
 
     <!-- LOGIN -->
-    <div id="loginPanel" class="panel">
-      <h1>WealthBride Admin (Demo)</h1>
-      <p class="muted">Sign in to manage demo requests (this is client-side demo auth).</p>
+    <div id="loginScreen" class="panel center">
+      <h1 class="brand">WealthBridge Investment Admin</h1>
+      <p class="muted">Sign in to manage demo investor requests (front-end demo only).</p>
 
       <div class="form-row">
-        <label>Username</label>
-        <input id="adminUser" type="text" placeholder="admin" />
-      </div>
-      <div class="form-row">
-        <label>Password</label>
-        <input id="adminPass" type="password" placeholder="password123" />
+        <label for="username">Username</label>
+        <input id="username" type="text" placeholder="admin.wealthybridge" />
       </div>
 
       <div class="form-row">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="***************" />
+      </div>
+
+      <div class="actions">
         <button id="loginBtn" class="btn">Sign in</button>
-        <button id="clearDemo" class="btn-secondary">Clear Demo Data</button>
+        <button id="fillBtn" class="btn-secondary">Fill Sample Data</button>
       </div>
 
       <p id="loginMsg" class="msg"></p>
-      <p class="muted small">Demo credentials (change these): <strong>admin / password123</strong></p>
+      <p class="small muted">Demo credentials: <strong>admin.wealthybridge</strong> / <strong>08157909627e</strong></p>
     </div>
 
     <!-- DASHBOARD -->
-    <div id="dashboardPanel" class="hidden full">
-      <header class="dash-header">
-        <h2>WealthBride — Admin (Demo)</h2>
-        <div class="header-actions">
-          <span id="adminLabel" class="muted small"></span>
+    <div id="dashboard" class="hidden">
+      <header class="topbar">
+        <div class="brand-left">
+          <div class="brand-logo">WealthBridge</div>
+          <div class="brand-sub">Investment Admin</div>
+        </div>
+
+        <div class="top-actions">
+          <input id="searchInput" type="search" placeholder="Search investors..." />
           <button id="logoutBtn" class="btn-secondary">Logout</button>
         </div>
       </header>
 
-      <nav class="tabs">
-        <button data-tab="withdrawals" class="tab active">Withdrawals</button>
-        <button data-tab="deposits" class="tab">Deposits</button>
-        <button data-tab="support" class="tab">Support</button>
-        <button data-tab="users" class="tab">Users</button>
-      </nav>
+      <main>
+        <section class="controls">
+          <div class="info">Showing <span id="countShown">0</span> investor(s)</div>
+          <div class="hint muted">Cards are demo-only — Approve/Reject updates status locally.</div>
+        </section>
 
-      <section id="tabContent" class="panel content">
-        <!-- Withdrawals -->
-        <div id="withdrawalsTab" class="tabpane">
-          <h3>Withdrawals</h3>
-          <table id="withdrawalsTable" class="table">
-            <thead><tr><th>ID</th><th>Requester</th><th>To Wallet</th><th>Amount</th><th>Status</th><th>When</th><th>Actions</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <section id="cardsWrapper" class="cards-grid">
+          <!-- investor cards injected here -->
+        </section>
 
-        <!-- Deposits -->
-        <div id="depositsTab" class="tabpane hidden">
-          <h3>Deposits</h3>
-          <table id="depositsTable" class="table">
-            <thead><tr><th>ID</th><th>Wallet</th><th>Amount</th><th>Method</th><th>Status</th><th>When</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <!-- Support -->
-        <div id="supportTab" class="tabpane hidden">
-          <h3>Support Messages</h3>
-          <table id="supportTable" class="table">
-            <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Wallet</th><th>Message</th><th>When</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <!-- Users -->
-        <div id="usersTab" class="tabpane hidden">
-          <h3>Users</h3>
-          <table id="usersTable" class="table">
-            <thead><tr><th>Address</th><th>Wallet Type</th><th>Verified</th><th>When</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </section>
+        <section class="footer-note">
+          <button id="clearData" class="btn-danger">Clear All Demo Data</button>
+        </section>
+      </main>
     </div>
 
   </div>
