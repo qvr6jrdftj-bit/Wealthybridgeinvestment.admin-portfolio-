@@ -1,166 +1,188 @@
-// Demo admin (client-side) — reads from localStorage keys created by the front-end demo
-// Demo credentials (change these before use)
-const DEMO_USER = 'admin';
-const DEMO_PASS = 'password123';
+/**
+ * Admin demo (front-end only)
+ * - Light theme, responsive card layout
+ * - Hard-coded credentials (demo):
+ *    username: admin.wealthybridge
+ *    password: 08157909627e
+ * - Uses localStorage to persist demo data
+ *
+ * WARNING: This is a local demo admin only — no real funds or server operations.
+ */
 
-const loginPanel = document.getElementById('loginPanel');
-const loginMsg = document.getElementById('loginMsg');
-const loginBtn = document.getElementById('loginBtn');
-const clearDemoBtn = document.getElementById('clearDemo');
+(function () {
+  'use strict';
 
-const dashboardPanel = document.getElementById('dashboardPanel');
-const logoutBtn = document.getElementById('logoutBtn');
-const adminLabel = document.getElementById('adminLabel');
+  // Demo credentials
+  const USERNAME = 'admin.wealthybridge';
+  const PASSWORD = '08157909627e';
 
-const tabs = Array.from(document.querySelectorAll('.tab'));
-const panes = {
-  withdrawals: document.getElementById('withdrawalsTab'),
-  deposits: document.getElementById('depositsTab'),
-  support: document.getElementById('supportTab'),
-  users: document.getElementById('usersTab')
-};
+  // DOM
+  const loginScreen = document.getElementById('loginScreen');
+  const loginBtn = document.getElementById('loginBtn');
+  const fillBtn = document.getElementById('fillBtn');
+  const loginMsg = document.getElementById('loginMsg');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
 
-// table bodies
-const withdrawalsTbody = document.querySelector('#withdrawalsTable tbody');
-const depositsTbody = document.querySelector('#depositsTable tbody');
-const supportTbody = document.querySelector('#supportTable tbody');
-const usersTbody = document.querySelector('#usersTable tbody');
+  const dashboard = document.getElementById('dashboard');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const cardsWrapper = document.getElementById('cardsWrapper');
+  const searchInput = document.getElementById('searchInput');
+  const countShown = document.getElementById('countShown');
+  const clearDataBtn = document.getElementById('clearData');
 
-function showPanel(name){
-  loginPanel.classList.toggle('hidden', name !== 'login');
-  dashboardPanel.classList.toggle('hidden', name !== 'dashboard');
-}
+  // LocalStorage key
+  const LS_KEY = 'wb_demo_investors_v1';
 
-loginBtn.addEventListener('click', () => {
-  const u = document.getElementById('adminUser').value.trim();
-  const p = document.getElementById('adminPass').value;
-  if (u === DEMO_USER && p === DEMO_PASS) {
-    showPanel('dashboard');
-    adminLabel.textContent = `Signed in as ${u} (demo)`;
-    loadAll();
-  } else {
-    loginMsg.textContent = 'Invalid credentials (demo)';
-    loginMsg.style.color = 'orange';
+  // Sample investors
+  const SAMPLE = [
+    { id: 'u1', name: 'Michael Brown', wallet: '0xA1B2...C3D4', type: 'Crypto', amount: 500, status: 'pending', created: Date.now() - 1000*60*60*24*2 },
+    { id: 'u2', name: 'Sarah Johnson', wallet: '0xB2C3...D4E5', type: 'Real Estate', amount: 1200, status: 'approved', created: Date.now() - 1000*60*60*24*10 },
+    { id: 'u3', name: 'David Lee', wallet: '0xC3D4...E5F6', type: 'Stocks', amount: 800, status: 'rejected', created: Date.now() - 1000*60*60*24*5 },
+    { id: 'u4', name: 'Emma Davis', wallet: '0xD4E5...F6A7', type: 'Bonds', amount: 300, status: 'pending', created: Date.now() - 1000*60*60*24*1 },
+  ];
+
+  // Utilities
+  function read() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null') || []; } catch (e) { return []; }
   }
-});
+  function write(arr) { localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
+  function ensureSample() {
+    const cur = read();
+    if (!cur || cur.length === 0) {
+      write(SAMPLE.slice());
+      return SAMPLE.slice();
+    }
+    return cur;
+  }
+  function formatCurrency(n) { return '$' + Number(n).toLocaleString(); }
+  function statusClass(status) {
+    if (status === 'pending') return 'pill pending';
+    if (status === 'approved') return 'pill approved';
+    return 'pill rejected';
+  }
 
-logoutBtn.addEventListener('click', () => {
-  showPanel('login');
-  document.getElementById('adminUser').value = '';
-  document.getElementById('adminPass').value = '';
-  loginMsg.textContent = 'Logged out';
-});
+  // Render card for one investor
+  function renderCard(inv) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.id = inv.id;
 
-clearDemoBtn.addEventListener('click', () => {
-  if (!confirm('Clear demo data from localStorage?')) return;
-  localStorage.removeItem('wb_withdrawals');
-  localStorage.removeItem('wb_deposits');
-  localStorage.removeItem('wb_support');
-  localStorage.removeItem('wb_users');
-  loadAll();
-});
+    const nameInitial = inv.name ? inv.name.split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() : 'WB';
 
-// tab switching
-tabs.forEach(btn => {
-  btn.addEventListener('click', () => {
-    tabs.forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.getAttribute('data-tab');
-    Object.keys(panes).forEach(k => panes[k].classList.toggle('hidden', k !== tab));
-    if (tab === 'withdrawals') loadWithdrawals();
-    if (tab === 'deposits') loadDeposits();
-    if (tab === 'support') loadSupport();
-    if (tab === 'users') loadUsers();
+    card.innerHTML = `
+      <div class="top">
+        <div class="user">
+          <div class="avatar">${nameInitial}</div>
+          <div>
+            <div class="meta">${inv.name}</div>
+            <div class="small-muted">${inv.wallet}</div>
+          </div>
+        </div>
+        <div class="${statusClass(inv.status)}">${inv.status.toUpperCase()}</div>
+      </div>
+
+      <div class="row">
+        <div><div class="label">Investment</div><div class="small-muted">${inv.type}</div></div>
+        <div><div class="label">Amount</div><div class="small-muted">${formatCurrency(inv.amount)}</div></div>
+      </div>
+
+      <div class="row actions">
+        <button class="approve">Approve</button>
+        <button class="reject">Reject</button>
+        <div style="margin-left:auto" class="small-muted">Added: ${new Date(inv.created).toLocaleDateString()}</div>
+      </div>
+    `;
+
+    // Approve
+    card.querySelector('.approve').addEventListener('click', () => {
+      updateStatus(inv.id, 'approved');
+    });
+    // Reject
+    card.querySelector('.reject').addEventListener('click', () => {
+      updateStatus(inv.id, 'rejected');
+    });
+
+    return card;
+  }
+
+  // Render list with optional filter
+  function renderList(filter = '') {
+    const arr = read().filter(i => {
+      if (!filter) return true;
+      const text = (i.name + ' ' + i.wallet + ' ' + i.type).toLowerCase();
+      return text.indexOf(filter.toLowerCase()) !== -1;
+    });
+    cardsWrapper.innerHTML = '';
+    arr.forEach(i => cardsWrapper.appendChild(renderCard(i)));
+    countShown.textContent = arr.length;
+  }
+
+  // Update investor status
+  function updateStatus(id, status) {
+    const arr = read();
+    const i = arr.find(x => x.id === id);
+    if (!i) return alert('Investor not found');
+    i.status = status;
+    write(arr);
+    renderList(searchInput.value.trim());
+  }
+
+  // Login handling
+  loginBtn.addEventListener('click', () => {
+    const u = usernameInput.value.trim();
+    const p = passwordInput.value;
+    if (u === USERNAME && p === PASSWORD) {
+      loginMsg.textContent = '';
+      showDashboard();
+      ensureSample();
+      renderList();
+    } else {
+      loginMsg.textContent = 'Invalid credentials';
+      loginMsg.style.color = 'crimson';
+    }
   });
-});
 
-// Load functions read from localStorage; if absent, create empty arrays
-function readLS(key){ try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e){ return []; } }
-function writeLS(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+  // Fill sample data button (for convenience)
+  fillBtn.addEventListener('click', () => {
+    write(SAMPLE.slice());
+    loginMsg.textContent = 'Sample data loaded (you can sign in now)';
+    loginMsg.style.color = 'green';
+  });
 
-function loadAll(){
-  loadWithdrawals();
-  loadDeposits();
-  loadSupport();
-  loadUsers();
-}
+  function showDashboard() {
+    loginScreen.classList.add('hidden');
+    dashboard.classList.remove('hidden');
+  }
 
-function loadWithdrawals(){
-  const arr = readLS('wb_withdrawals');
-  if (!arr.length) { withdrawalsTbody.innerHTML = '<tr><td colspan="7">No withdrawals</td></tr>'; return; }
-  withdrawalsTbody.innerHTML = arr.map(w => {
-    return `<tr>
-      <td>${w.id}</td>
-      <td>${w.requester || '-'}</td>
-      <td>${w.to}</td>
-      <td>$${w.amount}</td>
-      <td>${w.status}</td>
-      <td>${new Date(w.when).toLocaleString()}</td>
-      <td>
-        ${w.status === 'pending' ? `<button onclick="approve('${w.id}')">Approve</button><button onclick="reject('${w.id}')">Reject</button>` : ''}
-      </td>
-    </tr>`;
-  }).join('');
-}
+  // Logout
+  logoutBtn.addEventListener('click', () => {
+    dashboard.classList.add('hidden');
+    loginScreen.classList.remove('hidden');
+    usernameInput.value = '';
+    passwordInput.value = '';
+    loginMsg.textContent = 'Logged out';
+    loginMsg.style.color = '';
+  });
 
-function loadDeposits(){
-  const arr = readLS('wb_deposits');
-  if (!arr.length) { depositsTbody.innerHTML = '<tr><td colspan="6">No deposits</td></tr>'; return; }
-  depositsTbody.innerHTML = arr.map(d => {
-    return `<tr>
-      <td>${d.id}</td>
-      <td>${d.wallet || '-'}</td>
-      <td>$${d.amount}</td>
-      <td>${d.method}</td>
-      <td>${d.status}</td>
-      <td>${new Date(d.when).toLocaleString()}</td>
-    </tr>`;
-  }).join('');
-}
+  // Search
+  searchInput.addEventListener('input', e => {
+    renderList(e.target.value.trim());
+  });
 
-function loadSupport(){
-  const arr = readLS('wb_support');
-  if (!arr.length) { supportTbody.innerHTML = '<tr><td colspan="6">No messages</td></tr>'; return; }
-  supportTbody.innerHTML = arr.map(s => {
-    return `<tr>
-      <td>${s.id}</td>
-      <td>${s.name}</td>
-      <td>${s.email}</td>
-      <td>${s.wallet || '-'}</td>
-      <td>${escapeHtml(s.message)}</td>
-      <td>${new Date(s.when).toLocaleString()}</td>
-    </tr>`;
-  }).join('');
-}
+  // Clear demo data
+  clearDataBtn.addEventListener('click', () => {
+    if (!confirm('Clear all demo investor data? This cannot be undone.')) return;
+    localStorage.removeItem(LS_KEY);
+    renderList();
+  });
 
-function loadUsers(){
-  const arr = readLS('wb_users');
-  if (!arr.length) { usersTbody.innerHTML = '<tr><td colspan="4">No users</td></tr>'; return; }
-  usersTbody.innerHTML = arr.map(u => {
-    return `<tr>
-      <td>${u.address}</td><td>${u.walletType || '-'}</td><td>${u.verified ? 'Yes' : 'No'}</td><td>${new Date(u.when).toLocaleString()}</td>
-    </tr>`;
-  }).join('');
-}
+  // Initialize (keep previous data if exists)
+  (function init() {
+    // If there is no data, populate sample automatically so first login works
+    if (!read() || read().length === 0) {
+      write(SAMPLE.slice());
+    }
+  })();
 
-window.approve = function(id){
-  const arr = readLS('wb_withdrawals');
-  const idx = arr.findIndex(x=>x.id===id);
-  if (idx === -1) return alert('Not found');
-  arr[idx].status = 'paid';
-  writeLS('wb_withdrawals', arr);
-  loadWithdrawals();
-  alert('Marked as paid (demo). In production, send funds from admin wallet.');
-};
-
-window.reject = function(id){
-  const arr = readLS('wb_withdrawals');
-  const idx = arr.findIndex(x=>x.id===id);
-  if (idx === -1) return alert('Not found');
-  arr[idx].status = 'rejected';
-  writeLS('wb_withdrawals', arr);
-  loadWithdrawals();
-  alert('Rejected (demo).');
-};
-
-function escapeHtml(str=''){ return String(str).replace(/[&<>"'`]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'})[s]); }
+})();
